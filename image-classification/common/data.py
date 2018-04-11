@@ -34,6 +34,8 @@ def add_data_args(parser):
                       help='the image shape feed into the network, e.g. (3,224,224)')
     data.add_argument('--num-classes', type=int, help='the number of classes')
     data.add_argument('--num-examples', type=int, help='the number of training examples')
+    data.add_argument('--resize-train', type=int, help='resize size of train data')
+    data.add_argument('--resize-val', type=int, help='rezize size of val data')
     data.add_argument('--data-nthreads', type=int, default=4,
                       help='number of threads for data decoding')
     data.add_argument('--benchmark', type=int, default=0,
@@ -134,6 +136,7 @@ def get_rec_iter(args, kv=None):
         max_random_scale    = args.max_random_scale,
         pad                 = args.pad_size,
         fill_value          = 127,
+        resize              = args.resize_train,
         min_random_scale    = args.min_random_scale,
         max_aspect_ratio    = args.max_random_aspect_ratio,
         random_h            = args.max_random_h,
@@ -159,6 +162,7 @@ def get_rec_iter(args, kv=None):
         label_name          = 'softmax_label',
         batch_size          = args.batch_size,
         data_shape          = image_shape,
+        resize              = args.resize_val,
         preprocess_threads  = args.data_nthreads,
         rand_crop           = False,
         rand_mirror         = False,

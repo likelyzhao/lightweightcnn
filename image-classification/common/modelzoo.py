@@ -45,6 +45,9 @@ _default_model_info = {
                                           'params':_base_model_url+'imagenet-11k-place365-ch/resnet-152-0000.params'},
     'imagenet11k-place365ch-resnet-50': {'symbol':_base_model_url+'imagenet-11k-place365-ch/resnet-50-symbol.json',
                                          'params':_base_model_url+'imagenet-11k-place365-ch/resnet-50-0000.params'},
+    'imagenet1k-mobilenet': {'symbol':_base_qiniu_url+'classification/mobilenet-symbol.json',
+                                         'params':_base_qiniu_url+'classification/mobilenet-0000.params'},
+
 }
 
 def download_model(model_name, dst_dir='./', meta_info=None):
