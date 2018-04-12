@@ -61,8 +61,10 @@ if __name__ == "__main__":
     dir_path = os.path.dirname(os.path.realpath(__file__))
     (prefix, epoch) = modelzoo.download_model(
         args.pretrained_model, os.path.join(dir_path, 'model'))
-    if prefix is None:
-        (prefix, epoch) = (args.pretrained_model, args.load_epoch)
+    if args.load_epoch is not None:
+        (prefix, epoch) = (args.model_prefix, args.load_epoch)
+    logging.info(prefix)
+    logging.info(epoch)
     sym, arg_params, aux_params = mx.model.load_checkpoint(prefix, epoch)
 
     # remove the last fullc layer

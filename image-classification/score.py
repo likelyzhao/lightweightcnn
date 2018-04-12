@@ -22,7 +22,7 @@ import time
 import os
 import logging
 
-def score(model, data_val, metrics, gpus, batch_size, rgb_mean=None, mean_img=None,
+def score(model, data_val, metrics, gpus, batch_size, load_epoch = 0,rgb_mean=None, mean_img=None,
           image_shape='3,224,224', data_nthreads=4, label_name='softmax_label', max_num_examples=None):
     # create data iterator
     data_shape = tuple([int(i) for i in image_shape.split(',')])
@@ -47,9 +47,7 @@ def score(model, data_val, metrics, gpus, batch_size, rgb_mean=None, mean_img=No
     if isinstance(model, str):
         # download model
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        (prefix, epoch) = modelzoo.download_model(
-            model, os.path.join(dir_path, 'model'))
-        sym, arg_params, aux_params = mx.model.load_checkpoint(prefix, epoch)
+        sym, arg_params, aux_params = mx.model.load_checkpoint(model, load_epoch)
     elif isinstance(model, tuple) or isinstance(model, list):
         assert len(model) == 3
         (sym, arg_params, aux_params) = model
