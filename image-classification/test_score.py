@@ -21,14 +21,17 @@ test pretrained models
 from __future__ import print_function
 import mxnet as mx
 from common import find_mxnet, modelzoo
-from score import score
+from score import score,score_with_thresh
 import argparse
 
-def test_models(args,**kwargs):
+def test_models_with_threshold(args,**kwargs):
+    
+    (speed,r) = score_with_thresh(threshold = args.thrshold , load_epoch = args.load_epoch,image_shape = args.image_shape,model=args.pretrained_model, data_val=args.test_rec,rgb_mean='123.68,116.779,103.939', **kwargs)
+    print('Tested %s, acc = %f, speed = %f img/sec' % (args.pretrained_model, r, speed))
 
+def test_models(args,**kwargs):
     acc = mx.metric.create('acc')
-    (speed,) = score(load_epoch = args.load_epoch,image_shape = args.image_shape,model=args.pretrained_model, data_val=args.test_rec,
-                         rgb_mean='123.68,116.779,103.939', metrics=acc, **kwargs)
+    (speed,) = score(load_epoch = args.load_epoch,image_shape = args.image_shape,model=args.pretrained_model, data_val=args.test_rec,rgb_mean='123.68,116.779,103.939', metrics=acc, **kwargs)
     r = acc.get()[1]
     print('Tested %s, acc = %f, speed = %f img/sec' % (args.pretrained_model, r, speed))
 
@@ -44,6 +47,8 @@ if __name__ == '__main__':
                         help='the test epoch')
     parser.add_argument('--image-shape', type=str,
                         help='the test imageshape')
+    parser.add_argument('--thrshold', type=float,
+                        help='the thresh of class')
     args = parser.parse_args()
     gpus = mx.test_utils.list_gpus()
     assert len(gpus) > 0
@@ -53,3 +58,4 @@ if __name__ == '__main__':
     kwargs = {'gpus':gpus, 'batch_size':batch_size, 'max_num_examples':500}
 #    download_data()
     test_models(args,**kwargs)
+#    test_models_with_threshold(args,**kwargs)

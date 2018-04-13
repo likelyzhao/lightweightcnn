@@ -1,7 +1,7 @@
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
+
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
@@ -21,6 +21,65 @@ import mxnet as mx
 import time
 import os
 import logging
+
+def score_with_thresh(model, data_val, gpus, batch_size, threshold =0.1, load_epoch = 0,rgb_mean=None, mean_img=None,
+          image_shape='3,224,224', data_nthreads=4, label_name='softmax_label', max_num_examples=None):
+    # create data iterator
+    data_shape = tuple([int(i) for i in image_shape.split(',')])
+    if mean_img is not None:
+        mean_args = {'mean_img':mean_img}
+    elif rgb_mean is not None:
+        rgb_mean = [float(i) for i in rgb_mean.split(',')]
+        mean_args = {'mean_r':rgb_mean[0], 'mean_g':rgb_mean[1],
+          'mean_b':rgb_mean[2]}
+
+    data = mx.io.ImageRecordIter(
+        path_imgrec        = data_val,
+        label_width        = 1,
+        preprocess_threads = data_nthreads,
+        batch_size         = batch_size,
+        data_shape         = data_shape,
+        label_name         = label_name,
+        rand_crop          = False,
+        rand_mirror        = False,
+        **mean_args)
+
+    if isinstance(model, str):
+        # download model
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        sym, arg_params, aux_params = mx.model.load_checkpoint(model, load_epoch)
+    elif isinstance(model, tuple) or isinstance(model, list):
+        assert len(model) == 3
+        (sym, arg_params, aux_params) = model
+    else:
+        raise TypeError('model type [%s] is not supported' % str(type(model)))
+
+    # create module
+    if gpus == '':
+        devs = mx.cpu()
+    else:
+        devs = [mx.gpu(int(i)) for i in gpus.split(',')]
+
+    mod = mx.mod.Module(symbol=sym, context=devs, label_names=[label_name,])
+    mod.bind(for_training=False,
+             data_shapes=data.provide_data,
+             label_shapes=data.provide_label)
+    mod.set_params(arg_params, aux_params)
+    tic = time.time()
+    num = 0
+    acc = 0 
+    for batch in data:
+        y = mod.predict(mx.io.NDArrayIter(batch.data,batch.label))
+        y = y.asnumpy()
+        label = batch.label[0].asnumpy()
+        for idx in range(0,len(label)):
+            if y[idx,int(label[idx])] > threshold:
+                acc +=1 
+        num += batch_size
+        if max_num_examples is not None and num > max_num_examples:
+            break
+    return (num / (time.time() - tic), float(acc)/num )
+
 
 def score(model, data_val, metrics, gpus, batch_size, load_epoch = 0,rgb_mean=None, mean_img=None,
           image_shape='3,224,224', data_nthreads=4, label_name='softmax_label', max_num_examples=None):
